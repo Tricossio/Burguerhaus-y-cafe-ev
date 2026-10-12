@@ -1,17 +1,782 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ffffff" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <title>Burgerhaus &amp; Café</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Burgerhaus & Café</title>
+
+  <!-- Google Fonts & Font Awesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --bh-white: #ffffff;
+      --bh-black: #000000;
+      --bh-black-alt: #0f172a;
+      --bh-green: #15803d; /* Verde medio-oscuro */
+      --bh-green-light: #16a34a;
+      --bh-gray-light: #f8fafc;
+      --bh-gray-border: #e2e8f0;
+      --bh-gray-text: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+    img { display: block; max-width: 100%; height: auto; }
+    body { background-color: var(--bh-white); color: var(--bh-black-alt); overflow-x: hidden; }
+
+    /* MODAL REGISTRO Y MODAL RESUMEN */
+    .modal-overlay {
+      position: fixed; top:0; left:0; width:100vw; height:100vh;
+      background: rgba(0, 0, 0, 0.85); display: flex; align-items:center; justify-content:center;
+      z-index: 1000; backdrop-filter: blur(5px);
+    }
+    .modal-card {
+      background: var(--bh-white); padding: 35px 30px; border-radius: 24px; width: 90%; max-width: 440px;
+      text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 2px solid var(--bh-black);
+    }
+    .modal-card h2 { font-family: 'Fredoka', sans-serif; font-size: 1.8rem; color: var(--bh-black); margin-bottom: 5px; }
+    .modal-card input, .modal-card select {
+      width: 100%; padding: 13px 16px; margin: 10px 0; border-radius: 12px;
+      border: 2px solid var(--bh-gray-border); outline: none; font-weight: 600; background: var(--bh-gray-light);
+      color: var(--bh-black);
+    }
+    .modal-card input[aria-invalid="true"], .modal-card select[aria-invalid="true"] {
+      border-color: #b91c1c; background: #fff7f7;
+    }
+    .modal-card input:focus, .modal-card select:focus, button:focus-visible, a:focus-visible {
+      outline: 3px solid var(--bh-green-light); outline-offset: 3px;
+    }
+    .modal-card { max-height: calc(100vh - 32px); overflow-y: auto; }
+    .field-label { display: block; text-align: left; font-size: 0.82rem; font-weight: 700; margin-top: 8px; }
+    .form-error { color: #b91c1c; font-size: 0.82rem; text-align: left; min-height: 1.2em; margin-top: 4px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .hidden-field { display: none; }
+
+    /* ESTILO RESUMEN DE PEDIDO CON CÓDIGO NÚMERO */
+    .order-code-badge {
+      background: var(--bh-gray-light); color: var(--bh-green); border: 2px dashed var(--bh-green);
+      font-family: 'Fredoka', sans-serif; font-size: 1.3rem; padding: 8px 15px; border-radius: 12px;
+      display: inline-block; margin: 10px 0 15px; font-weight: 700;
+    }
+    .order-summary-box {
+      text-align: left; background: var(--bh-gray-light); padding: 15px; border-radius: 12px;
+      margin-bottom: 20px; font-size: 0.9rem; border: 1px solid var(--bh-gray-border); line-height: 1.6;
+      max-height: min(45vh, 320px); overflow-y: auto;
+    }
+
+    /* NAV CON ESPACIO PARA LOGO Y TEXTO TODO NEGRO */
+    nav.top-nav {
+      background: var(--bh-white); padding: 15px 5%; display: flex;
+      justify-content: space-between; align-items: center; gap: 16px; color: var(--bh-black);
+      border-bottom: 2px solid var(--bh-gray-border);
+    }
+    .brand-logo-container { display: flex; align-items: center; gap: 12px; }
+    .brand-logo-img {
+      width: 48px; height: 48px; border-radius: 50%; background: var(--bh-black);
+      display: flex; align-items: center; justify-content: center; color: var(--bh-white);
+      font-weight: 800; font-size: 1.2rem; font-family: 'Fredoka', sans-serif;
+    }
+    .brand-logo-text {
+      font-family: 'Fredoka', sans-serif; 
+      font-size: clamp(1.05rem, 2.5vw, 1.6rem);
+      font-weight: 700; 
+      color: var(--bh-black); 
+    }
+    .brand-logo-text span { 
+      color: var(--bh-black); 
+    }
+
+    /* BOTONES */
+    .btn-green-black {
+      background: var(--bh-green); color: var(--bh-white); border: 2px solid var(--bh-green);
+      padding: 12px 24px; border-radius: 30px; font-weight: 700; font-size: 0.95rem;
+      cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-green-black:hover {
+      background: var(--bh-green-light); border-color: var(--bh-green-light);
+      box-shadow: 0 6px 15px rgba(21, 128, 61, 0.3); transform: translateY(-2px);
+    }
+
+    .cart-pill {
+      background: var(--bh-black); color: var(--bh-white); border: 2px solid var(--bh-black);
+      padding: 8px 20px; border-radius: 30px; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+    }
+    .cart-pill:hover { background: var(--bh-green); border-color: var(--bh-green); }
+    .cart-pill { font-family: inherit; }
+
+    /* HERO BANNER LIMPIO */
+    header.hero-banner {
+      background: var(--bh-white); padding: 40px 5% 30px; color: var(--bh-black);
+      border-bottom: 2px solid var(--bh-gray-border);
+    }
+    .hero-content {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+    }
+    @media (max-width: 900px) { .hero-content { grid-template-columns: 1fr; text-align: center; } }
+
+    .hero-text h1 {
+      font-family: 'Fredoka', sans-serif; font-size: 3.2rem; line-height: 1.05;
+      text-transform: uppercase; color: var(--bh-black); margin-bottom: 15px;
+    }
+    .hero-text p { font-size: 1rem; color: var(--bh-gray-text); margin-bottom: 30px; max-width: 480px; }
+
+    .hero-img-box { display: flex; justify-content: center; align-items: center; }
+    .hero-img-box img.main-burger {
+      width: min(100%, 440px); height: auto; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.12));
+    }
+
+    /* BOTONES DE CATEGORÍA */
+    .hero-categories { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
+    @media (max-width: 900px) { .hero-categories { justify-content: center; } }
+
+    .cat-btn-hero {
+      background: var(--bh-black); color: var(--bh-white); border: 2px solid var(--bh-black);
+      padding: 10px 20px; border-radius: 30px; font-weight: 700; font-size: 0.88rem;
+      cursor: pointer; transition: all 0.25s;
+    }
+    .cat-btn-hero.active, .cat-btn-hero:hover {
+      background: var(--bh-green); color: var(--bh-white); border-color: var(--bh-green);
+      box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3); transform: translateY(-2px);
+    }
+
+    /* SECCIÓN DEL MENÚ EN 4 COLUMNAS EN LA MISMA FILA */
+    .menu-section { max-width: 1280px; margin: 50px auto; padding: 0 4%; }
+    .section-title {
+      text-align: center; font-family: 'Fredoka', sans-serif; font-size: 2.3rem;
+      color: var(--bh-black); margin-bottom: 40px; text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+    @media (max-width: 1100px) { .products-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px)  { .products-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px)  { .products-grid { grid-template-columns: repeat(1, 1fr); } }
+
+    /* TARJETA DE PRODUCTO */
+    .card-item {
+      background: var(--bh-white); border-radius: 20px; padding: 20px 18px; text-align: center;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.04); transition: transform 0.3s ease, border-color 0.3s ease;
+      display: flex; flex-direction: column; justify-content: space-between; border: 2px solid var(--bh-gray-border);
+    }
+    .card-item:hover {
+      transform: translateY(-6px); border-color: var(--bh-green); box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    }
+
+    .card-img-wrap {
+      height: 150px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+    }
+    .card-img-wrap img {
+      width: auto; max-height: 135px; max-width: 100%; object-fit: contain;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.1)); transition: transform 0.3s;
+    }
+    .card-item:hover .card-img-wrap img { transform: scale(1.06); }
+
+    .card-title {
+      font-family: 'Fredoka', sans-serif; font-size: 1.15rem; color: var(--bh-black);
+      margin-bottom: 6px; text-transform: uppercase; line-height: 1.2;
+    }
+    .card-desc { font-size: 0.8rem; color: var(--bh-gray-text); margin-bottom: 15px; line-height: 1.4; }
+
+    .card-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 10px; border-top: 2px dashed var(--bh-gray-border);
+    }
+    .card-price { font-family: 'Fredoka', sans-serif; font-size: 1.35rem; color: var(--bh-black); }
+    .card-price span { font-size: 0.85rem; color: var(--bh-green); font-weight: 700; }
+
+    /* FOOTER (NEGRO NEGRO) */
+    footer {
+      background: var(--bh-black); color: var(--bh-white); padding: 40px 5%;
+      text-align: center; border-top: 4px solid var(--bh-green); margin-top: 80px;
+    }
+    .footer-title { font-family: 'Fredoka', sans-serif; font-size: 1.8rem; margin-bottom: 10px; color: var(--bh-white); }
+    .footer-thanks { font-size: 1.1rem; font-weight: 600; color: var(--bh-green); margin-bottom: 25px; }
+    .footer-socials { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; }
+    .social-link {
+      width: 50px; height: 50px; border-radius: 50%; background: #111827; color: var(--bh-white);
+      display: flex; align-items: center; justify-content: center; font-size: 1.4rem; text-decoration: none;
+      transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.15);
+    }
+    .social-link:hover { background: var(--bh-green); border-color: var(--bh-green); transform: translateY(-3px); }
+    .footer-copy { font-size: 0.8rem; color: #9ca3af; }
+
+    /* CARRITO DRAWER */
+    .cart-backdrop {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55); z-index: 600;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease; backdrop-filter: blur(2px);
+    }
+    .cart-backdrop.is-open {
+      opacity: 1; pointer-events: auto;
+    }
+    .cart-drawer {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.96);
+      width: min(520px, calc(100vw - 24px)); max-height: calc(100vh - 32px);
+      background: var(--bh-white); border: 2px solid var(--bh-black); border-radius: 22px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22); z-index: 700; padding: 18px 18px 14px;
+      display: flex; flex-direction: column; gap: 12px; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .cart-drawer.is-open {
+      opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1);
+    }
+    .cart-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .cart-header h3 { font-family: 'Fredoka', sans-serif; font-size: 1.5rem; color: var(--bh-black); }
+    .cart-header-count { background: var(--bh-green); color: var(--bh-white); padding: 3px 9px; border-radius: 20px; font-size: 0.8rem; }
+    .cart-list { flex-grow: 1; overflow-y: auto; font-size: 0.9rem; padding-right: 4px; }
+    .cart-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; padding: 10px 0; border-bottom: 1px solid var(--bh-gray-border); }
+    .cart-controls { display: flex; align-items: center; gap: 8px; }
+    .qty-btn {
+      width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--bh-black);
+      background: var(--bh-white); color: var(--bh-black); font-weight: 800; cursor: pointer;
+      min-width: 32px; min-height: 32px;
+    }
+    .qty-btn:hover { background: var(--bh-green); color: var(--bh-white); border-color: var(--bh-green); }
+    .remove-item-btn {
+      background: transparent; border: none; color: #ef4444; cursor: pointer; font-weight: 800; min-width: 32px; min-height: 32px;
+    }
+    .add-confirmation {
+      position: fixed; top: 25px; left: 50%; transform: translate(-50%, -20px);
+      background: var(--bh-green); color: var(--bh-white); padding: 12px 20px;
+      border-radius: 30px; font-weight: 700; opacity: 0; pointer-events: none;
+      z-index: 1100; transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+    .add-confirmation.visible { opacity: 1; transform: translate(-50%, 0); }
+    .modal-actions { display: flex; flex-direction: column; gap: 10px; position: sticky; bottom: -35px; background: var(--bh-white); padding-bottom: 2px; }
+    .secondary-action { background: var(--bh-black); border-color: var(--bh-black); }
+    .secondary-action:hover { background: #1f2937; border-color: #1f2937; }
+    button:disabled,
+    .btn-green-black:disabled {
+      opacity: 0.5; cursor: not-allowed; pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      nav.top-nav { padding: 12px 4%; }
+      .brand-logo-container { gap: 8px; min-width: 0; }
+      .brand-logo-img { width: 40px; height: 40px; flex: 0 0 40px; }
+      .cart-pill { padding: 8px 14px; flex: 0 0 auto; min-height: 44px; }
+      .hero-text h1 { font-size: clamp(2rem, 10vw, 2.7rem); overflow-wrap: break-word; }
+      .hero-text p { margin-left: auto; margin-right: auto; }
+      .cart-drawer {
+        width: min(520px, calc(100vw - 18px)); max-height: min(80vh, 500px);
+      }
+      .cart-row { margin-bottom: 8px; }
+      .menu-section { margin-top: 36px; padding: 0 5%; }
+      .section-title { font-size: clamp(1.7rem, 7vw, 2.3rem); margin-bottom: 28px; }
+    }
+
+    @media (max-width: 420px) {
+      .brand-logo-text { font-size: 0.95rem; }
+      .brand-logo-text span { display: none; }
+      .hero-banner { padding-left: 4%; padding-right: 4%; }
+      .hero-categories { gap: 8px; }
+      .cat-btn-hero { padding: 9px 13px; font-size: 0.78rem; min-height: 44px; }
+      .products-grid { gap: 16px; }
+      .card-item { padding: 16px 14px; }
+      .card-img-wrap { height: clamp(120px, 34vw, 150px); }
+      .card-desc { font-size: 0.78rem; }
+      .btn-green-black, .qty-btn, .remove-item-btn { min-height: 44px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MODAL REGISTRO DE USUARIO -->
+  <div class="modal-overlay" id="userModal" role="dialog" aria-modal="true" aria-labelledby="userTitle">
+    <form class="modal-card" id="userForm" novalidate>
+      <h2 id="userTitle">BIENVENIDO</h2>
+      <p style="font-size: 0.88rem; color: var(--bh-gray-text); margin-bottom: 15px;">Usaremos estos datos para identificar tu pedido y contactarte por WhatsApp.</p>
+      <label class="field-label" for="custName">Nombre completo</label>
+      <input type="text" id="custName" placeholder="Tu nombre completo" autocomplete="name" required minlength="2" aria-describedby="nameError" aria-invalid="false">
+      <div class="form-error" id="nameError" aria-live="polite"></div>
+      <label class="field-label" for="custPhone">Número de WhatsApp</label>
+      <input type="tel" id="custPhone" placeholder="Ej. 62701097" autocomplete="tel" inputmode="tel" pattern="[0-9]{7,20}" required aria-describedby="phoneError" aria-invalid="false">
+      <div class="form-error" id="phoneError" aria-live="polite"></div>
+      <label class="field-label" for="custType">Tipo de pedido</label>
+      <select id="custType" autocomplete="off" aria-describedby="typeHint" aria-invalid="false">
+        <option value="Delivery">Delivery</option>
+        <option value="Para Mesa">Para Mesa</option>
+      </select>
+      <div id="typeHint" class="sr-only">Elige si tu pedido será para delivery o para mesa.</div>
+      <div id="mesaFieldWrap" class="hidden-field" aria-live="polite">
+        <label class="field-label" for="mesaNumber">Número de mesa</label>
+        <input type="text" id="mesaNumber" placeholder="Ej. 12" inputmode="numeric" autocomplete="off" aria-invalid="false" aria-describedby="mesaError">
+        <div class="form-error" id="mesaError" aria-live="polite"></div>
+      </div>
+      <button class="btn-green-black" type="submit" style="width: 100%; margin-top: 15px; padding: 14px;">ENTRAR AL MENÚ</button>
+    </form>
+  </div>
+
+  <!-- MODAL DE CONFIRMACIÓN DE PEDIDO -->
+  <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" style="display: none;">
+    <div class="modal-card">
+      <h2 id="confirmTitle">PEDIDO LISTO EN WHATSAPP</h2>
+      <div class="order-code-badge" id="orderCode">N° #000000</div>
+      <p style="font-size: 0.88rem; color: var(--bh-gray-text); margin-bottom: 15px;">Revisa el mensaje y pulsa “Enviar” en WhatsApp para completar tu pedido.</p>
+      
+      <div class="order-summary-box" id="modalSummaryContent">
+        <!-- Generado dinámicamente -->
+      </div>
+
+      <div class="modal-actions">
+        <a class="btn-green-black" id="whatsappLink" href="#" target="_blank" rel="noopener" style="width: 100%; font-size: 1rem; padding: 14px;">Abrir WhatsApp</a>
+        <button class="btn-green-black secondary-action" type="button" style="width: 100%; font-size: 1rem; padding: 14px;" onclick="closeConfirmModal()">Cerrar comprobante</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="add-confirmation" id="addConfirmation" role="status" aria-live="polite"></div>
+
+  <div id="siteContent">
+  <!-- NAV -->
+  <nav class="top-nav">
+    <div class="brand-logo-container">
+      <div class="brand-logo-img">BH</div>
+      <div class="brand-logo-text">BURGERHAUS <span>& CAFÉ</span></div>
+    </div>
+      <button class="cart-pill" type="button" aria-label="Carrito: 0 productos">
+      <i class="fa-solid fa-cart-shopping"></i>
+      <span id="cartCount">0</span>
+      </button>
+  </nav>
+
+  <!-- HERO BANNER -->
+  <header class="hero-banner">
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1>LAS MEJORES HAMBURGUESAS</h1>
+        <p id="userWelcome">Sabor artesanal incomparable, papas crocantes, cafetería y postres preparados al instante.</p>
+        
+        <div class="hero-categories">
+          <button class="cat-btn-hero active" type="button" aria-pressed="true" onclick="filterCategory('combos', this)">Combos</button>
+          <button class="cat-btn-hero" type="button" aria-pressed="false" onclick="filterCategory('simples', this)">Simples</button>
+          <button class="cat-btn-hero" type="button" aria-pressed="false" onclick="filterCategory('papas', this)">Papas</button>
+          <button class="cat-btn-hero" type="button" aria-pressed="false" onclick="filterCategory('cafes', this)">Cafés y Postres</button>
+          <button class="cat-btn-hero" type="button" aria-pressed="false" onclick="filterCategory('bebidas', this)">Bebidas</button>
+        </div>
+      </div>
+
+      <div class="hero-img-box">
+        <img src="https://pngimg.com/uploads/burger_sandwich/burger_sandwich_PNG4135.png" class="main-burger" alt="Burgerhaus Main Burger">
+      </div>
+    </div>
+  </header>
+
+  <!-- SECCIÓN MENÚ CON DISTRIBUCIÓN EN FILAS DE 4 -->
+  <section class="menu-section">
+    <h2 class="section-title" id="categoryTitle">NUESTROS COMBOS</h2>
+    <div id="catalogStatus" role="status" aria-live="polite" class="sr-only"></div>
+    <div class="products-grid" id="menuGrid">
+      <!-- Carga dinámica alineada -->
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-title">BURGERHAUS & CAFÉ</div>
+    <div class="footer-thanks">¡Gracias por tu compra!</div>
+    
+    <div class="footer-socials">
+      <a href="https://www.instagram.com/burgerhaus.cafe?igsh=MXh0NDJ6MjQ1cmYyeA==" target="_blank" class="social-link" title="Instagram de Burgerhaus" aria-label="Instagram de Burgerhaus">
+        <i class="fa-brands fa-instagram"></i>
+      </a>
+      <a href="https://wa.me/59162701097" target="_blank" class="social-link" title="WhatsApp de Burgerhaus" aria-label="WhatsApp de Burgerhaus">
+        <i class="fa-brands fa-whatsapp"></i>
+      </a>
+    </div>
+
+    <div class="footer-copy">© Burgerhaus & Café. Todos los derechos reservados.</div>
+  </footer>
+  </div>
+
+  <div class="cart-backdrop" id="cartBackdrop" aria-hidden="true"></div>
+
+  <!-- CARRITO DRAWER -->
+  <aside class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
+    <div class="cart-header">
+      <h3 id="cartTitle">Tu Pedido <span class="cart-header-count" id="cartDrawerCount">0</span></h3>
+      <button type="button" class="remove-item-btn" aria-label="Cerrar carrito" onclick="toggleCart(false)" style="color: var(--bh-black); font-size: 1.5rem;">✕</button>
+    </div>
+    <div class="cart-list" id="cartItems">Carrito vacío.</div>
+    <div>
+      <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.3rem; margin-bottom:15px; border-top: 2px solid var(--bh-gray-border); padding-top: 10px;">
+        <span>Total:</span>
+        <span id="cartTotal" style="color:var(--bh-green);">0 Bs</span>
+      </div>
+      <button id="sendOrderBtn" class="btn-green-black" type="button" style="width:100%; padding: 15px;" onclick="sendOrder()" disabled aria-disabled="true">ENVIAR PEDIDO</button>
+    </div>
+  </aside>
+
+  <script>
+    const PRODUCTS_DATA = [
+      // COMBOS
+      { id: 1, name: "Combo Tocino", price: 55, cat: "combos", desc: "Tocino súper crocante, cheddar suave + Papas y Gaseosa.", img: "Tocino.jpeg" },
+      { id: 2, name: "Combo Americano", price: 53, cat: "combos", desc: "Doble cheddar fundido, pepinillos + Papas Fritas + Gaseosa.", img: "Americana.jpeg" },
+      { id: 3, name: "La 300", price: 58, cat: "combos", desc: "300g de pura carne de res, doble queso, salsa especial + Papas y Gaseosa.", img: "Blue burguer.jpeg" },
+      { id: 4, name: "La Veggie", price: 50, cat: "combos", desc: "Hamburguesa vegetariana especial con vegetales frescos + Papas y Gaseosa.", img: "Veggie.jpeg" },
+
+      // SIMPLES
+      { id: 5, name: "Tocino", price: 46, cat: "simples", desc: "Doble tira de tocino ahumado crocante con fundido cheddar.", img: "Tocino.jpeg" },
+      { id: 6, name: "Americano", price: 44, cat: "simples", desc: "Queso cheddar abundante, pepinillos en conserva y mostaza.", img: "Americana.jpeg" },
+      { id: 7, name: "La 300", price: 48, cat: "simples", desc: "300g de pura carne artesanal de res con queso fundido y salsas.", img: "Blue burguer.jpeg" },
+      { id: 8, name: "Veggie", price: 40, cat: "simples", desc: "Hamburguesa vegetariana con tomate, lechuga y aderezo especial.", img: "Veggie.jpeg" },
+
+      // PAPAS
+      { id: 9, name: "Papas Fritas Porción", price: 14, cat: "papas", desc: "Papas bastón crujientes recién fritas y sazonadas.", img: "papas.jpeg" },
+
+      // CAFÉS & POSTRES4
+      { id: 10, name: "Café con Jugo de Naranja", price: 16, cat: "cafes", desc: "Refrescante combinación de espresso recién pasado con jugo natural de naranja.", img: "cafe con naranja.jpeg" },
+      { id: 11, name: "Café Negro", price: 12, cat: "cafes", desc: "Café negro puramente pasado, intenso y reconfortante.", img: "cafe caliente.jpeg" },
+      { id: 12, name: "Capuccino Caliente", price: 18, cat: "cafes", desc: "Espresso concentrado con leche vaporizada y espuma de cacao.", img: "Late burguerhaus.jpeg" },
+      { id: 13, name: "Brownie con Helado", price: 25, cat: "cafes", desc: "Brownie tibio de chocolate con bola de helado de vainilla.", img: "brownie burguerhaus.jpeg" },
+
+      // BEBIDAS
+      { id: 14, name: "Cerveza Paulaner", price: 28, cat: "bebidas", desc: "Cerveza alemana Paulaner helada de alta calidad.", img: "Cerveza Paulaner.png" },
+      { id: 15, name: "Jugo del Valle (1 Litro)", price: 18, cat: "bebidas", desc: "Jugo natural en botella de 1 litro, varios sabores.", img: "jugo delvaie.png" },
+      { id: 16, name: "Gaseosa Personal", price: 10, cat: "bebidas", desc: "Gaseosa helada personal.", img: "Coca de a quinientos.png" }
+    ];
+
+    let user = { name: "", phone: "", type: "", mesa: "" };
+    let cart = [];
+    let lastFocusedElement = null;
+
+    const sendOrderBtn = document.getElementById('sendOrderBtn');
+    const custType = document.getElementById('custType');
+    const mesaFieldWrap = document.getElementById('mesaFieldWrap');
+    const mesaInput = document.getElementById('mesaNumber');
+    const cartDrawer = document.getElementById('cartDrawer');
+    const cartBackdrop = document.getElementById('cartBackdrop');
+
+    function setSiteInert(isInert) {
+      const siteContent = document.getElementById('siteContent');
+      siteContent.inert = isInert;
+      siteContent.setAttribute('aria-hidden', String(isInert));
+    }
+
+    function formatPhoneError(value) {
+      const digits = value.replace(/\D/g, '');
+      if (!digits) return 'Escribe tu número de WhatsApp.';
+      if (digits.length < 7 || digits.length > 9) return 'El número debe tener entre 7 y 9 dígitos.';
+      if (/^(\d)\1+$/.test(digits)) return 'Número inválido. Revisa los dígitos.';
+      return 'Escribe un número de WhatsApp válido.';
+    }
+
+    function isValidPhone(value) {
+      const digits = value.replace(/\D/g, '');
+      return digits.length >= 7 && digits.length <= 9 && !/^(\d)\1+$/.test(digits);
+    }
+
+    function isValidMesaNumber(value) {
+      const digits = value.trim();
+      return digits.length > 0 && /^\d{1,4}$/.test(digits);
+    }
+
+    function updateMesaField() {
+      const isMesa = custType.value === 'Para Mesa';
+      mesaFieldWrap.classList.toggle('hidden-field', !isMesa);
+      mesaInput.required = isMesa;
+      mesaInput.setAttribute('aria-invalid', 'false');
+      mesaInput.value = isMesa ? mesaInput.value : '';
+      if (!isMesa) {
+        document.getElementById('mesaError').innerText = '';
+      }
+    }
+
+    function setFieldError(input, errorElement, message) {
+      errorElement.innerText = message || '';
+      input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    }
+
+    function saveUser(event) {
+      if (event) event.preventDefault();
+      const form = document.getElementById('userForm');
+      const nameInput = document.getElementById('custName');
+      const phoneInput = document.getElementById('custPhone');
+      const nameError = document.getElementById('nameError');
+      const phoneError = document.getElementById('phoneError');
+      const isMesa = custType.value === 'Para Mesa';
+
+      const nameValid = nameInput.value.trim().length >= 2;
+      const phoneValid = isValidPhone(phoneInput.value);
+      const mesaValid = !isMesa || isValidMesaNumber(mesaInput.value);
+
+      setFieldError(nameInput, nameError, nameValid ? '' : 'Escribe tu nombre completo (mínimo 2 caracteres).');
+      setFieldError(phoneInput, phoneError, phoneValid ? '' : formatPhoneError(phoneInput.value));
+
+      if (isMesa) {
+        const mesaError = document.getElementById('mesaError');
+        setFieldError(mesaInput, mesaError, mesaValid ? '' : 'Indica el número de mesa o QR para continuar.');
+      }
+
+      if (!form.checkValidity() || !nameValid || !phoneValid || !mesaValid) {
+        const firstInvalid = [nameInput, phoneInput, ...(isMesa ? [mesaInput] : [])].find(input => input.getAttribute('aria-invalid') === 'true' || !input.validity.valid);
+        if (firstInvalid) firstInvalid.focus();
+        return;
+      }
+
+      user.name = nameInput.value.trim();
+      user.phone = phoneInput.value.trim();
+      user.type = custType.value;
+      user.mesa = isMesa ? mesaInput.value.trim() : '';
+
+      document.getElementById('userModal').style.display = 'none';
+      setSiteInert(false);
+      document.getElementById('userWelcome').innerText = `Hola ${user.name}. Pedido configurado para (${user.type}${user.type === 'Para Mesa' ? `, mesa ${user.mesa}` : ''}). Disfruta lo mejor de Burgerhaus & Café.`;
+      lastFocusedElement = null;
+    }
+
+    function getFocusableElements(container) {
+      return [...container.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => !element.hasAttribute('hidden') && !element.closest('[hidden]'));
+    }
+
+    function trapFocus(event) {
+      if (!cartDrawer.classList.contains('is-open') || event.key !== 'Tab') return;
+      const focusable = getFocusableElements(cartDrawer);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    function toggleCart(forceOpen) {
+      const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !cartDrawer.classList.contains('is-open');
+      cartDrawer.classList.toggle('is-open', shouldOpen);
+      cartBackdrop.classList.toggle('is-open', shouldOpen);
+      cartDrawer.setAttribute('aria-hidden', String(!shouldOpen));
+      document.querySelector('.cart-pill').setAttribute('aria-expanded', String(shouldOpen));
+
+      if (shouldOpen) {
+        lastFocusedElement = document.activeElement;
+        setSiteInert(true);
+        const firstFocusable = getFocusableElements(cartDrawer)[0];
+        if (firstFocusable) firstFocusable.focus();
+      } else {
+        setSiteInert(false);
+        if (lastFocusedElement) {
+          lastFocusedElement.focus();
+        }
+        lastFocusedElement = null;
+      }
+    }
+
+    document.getElementById('userForm').addEventListener('submit', saveUser);
+    custType.addEventListener('change', updateMesaField);
+    document.getElementById('custPhone').addEventListener('input', function () {
+      const valid = isValidPhone(this.value);
+      const phoneError = document.getElementById('phoneError');
+      if (this.value.trim() === '') {
+        setFieldError(this, phoneError, 'Escribe tu número de WhatsApp.');
+      } else {
+        setFieldError(this, phoneError, valid ? '' : formatPhoneError(this.value));
+      }
+    });
+    mesaInput.addEventListener('input', function () {
+      const mesaError = document.getElementById('mesaError');
+      setFieldError(this, mesaError, isValidMesaNumber(this.value) ? '' : 'Indica el número de mesa o QR para continuar.');
+    });
+    document.addEventListener('keydown', function (event) {
+      if (cartDrawer.classList.contains('is-open') && event.key === 'Escape') {
+        toggleCart(false);
+      }
+      if (document.getElementById('confirmModal').style.display !== 'none' && event.key === 'Escape') {
+        closeConfirmModal();
+      }
+      trapFocus(event);
+    });
+    cartBackdrop.addEventListener('click', () => toggleCart(false));
+
+    function filterCategory(cat, btn) {
+      document.querySelectorAll('.cat-btn-hero').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.cat-btn-hero').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      btn.classList.add('active');
+
+      const titles = {
+        'combos': 'NUESTROS COMBOS',
+        'simples': 'HAMBURGUESAS SIMPLES',
+        'papas': 'NUESTROS COMPLEMENTOS',
+        'cafes': 'CAFÉS Y POSTRES',
+        'bebidas': 'BEBIDAS Y CERVEZAS'
+      };
+      document.getElementById('categoryTitle').innerText = titles[cat] || 'NUESTRO MENÚ';
+
+      const filtered = PRODUCTS_DATA.filter(p => p.cat === cat);
+      renderGrid(filtered);
+      document.getElementById('catalogStatus').innerText = `${filtered.length} productos en ${titles[cat] || 'nuestro menú'}.`;
+    }
+
+    function renderGrid(items) {
+      const grid = document.getElementById('menuGrid');
+      grid.innerHTML = items.map(p => {
+        return `
+          <div class="card-item">
+            <div>
+              <div class="card-img-wrap">
+                <img src="${p.img}" alt="${p.name}">
+              </div>
+              <h3 class="card-title">${p.name}</h3>
+              <p class="card-desc">${p.desc}</p>
+            </div>
+            <div class="card-bottom">
+              <div class="card-price">${p.price} <span>Bs</span></div>
+              <button class="btn-green-black" style="padding: 8px 16px; font-size: 0.85rem;" onclick="addToCart('${p.name}', ${p.price})" aria-label="Ordenar ${p.name}">ORDENAR</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getCartQuantity() {
+      return cart.reduce((sum, item) => sum + item.qty, 0);
+    }
+
+    function getCartTotal() {
+      return cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    }
+
+    function addToCart(name, price) {
+      const existing = cart.find(item => item.name === name);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ name, price, qty: 1 });
+      }
+      updateCartUI();
+      const confirmation = document.getElementById('addConfirmation');
+      confirmation.innerText = `Producto agregado: ${name}. Total ${getCartTotal()} Bs.`;
+      confirmation.classList.add('visible');
+      clearTimeout(window.addConfirmationTimer);
+      window.addConfirmationTimer = setTimeout(() => confirmation.classList.remove('visible'), 2200);
+    }
+
+    function updateCartUI() {
+      const cartCount = document.getElementById('cartCount');
+      const cartDrawerCount = document.getElementById('cartDrawerCount');
+      const cartButton = document.querySelector('.cart-pill');
+      const cartItems = document.getElementById('cartItems');
+      const totalSpan = document.getElementById('cartTotal');
+      const totalItems = getCartQuantity();
+      const total = getCartTotal();
+
+      cartCount.innerText = totalItems;
+      cartDrawerCount.innerText = totalItems;
+      cartButton.setAttribute('aria-label', `Carrito: ${totalItems} ${totalItems === 1 ? 'producto' : 'productos'}`);
+      cartButton.setAttribute('aria-expanded', String(cartDrawer.classList.contains('is-open')));
+      sendOrderBtn.disabled = totalItems === 0;
+      sendOrderBtn.setAttribute('aria-disabled', String(totalItems === 0));
+
+      if (totalItems === 0) {
+        cartItems.innerHTML = 'Carrito vacío.';
+        totalSpan.innerText = '0 Bs';
+        return;
+      }
+
+      cartItems.innerHTML = cart.map((item, i) => {
+        const itemTotal = item.price * item.qty;
+        return `
+          <div class="cart-row">
+            <div>
+              <strong>${item.name}</strong><br>
+              <small style="color:var(--bh-green); font-weight:bold;">${itemTotal} Bs</small>
+            </div>
+            <div class="cart-controls">
+              <button type="button" class="qty-btn" onclick="changeQty(${i}, -1)" aria-label="Disminuir cantidad de ${item.name}">−</button>
+              <span aria-live="polite" style="font-weight:700; min-width: 18px; text-align: center;">${item.qty}</span>
+              <button type="button" class="qty-btn" onclick="changeQty(${i}, 1)" aria-label="Aumentar cantidad de ${item.name}">+</button>
+              <button type="button" class="remove-item-btn" onclick="removeItem(${i})" aria-label="Eliminar ${item.name}">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      totalSpan.innerText = `${total} Bs`;
+      document.getElementById('addConfirmation').innerText = `Productos en el carrito: ${totalItems}. Total ${total} Bs.`;
+    }
+
+    function changeQty(index, delta) {
+      const item = cart[index];
+      if (!item) return;
+      item.qty += delta;
+      if (item.qty <= 0) {
+        cart.splice(index, 1);
+      }
+      updateCartUI();
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function sendOrder() {
+      if (getCartQuantity() === 0) {
+        sendOrderBtn.disabled = true;
+        return;
+      }
+
+      const randomCode = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById('orderCode').innerText = `CÓDIGO: #${randomCode}`;
+
+      let total = 0;
+      let itemsHtml = cart.map((item, index) => {
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+        return `${index + 1}. ${item.name} x${item.qty} - ${itemTotal} Bs<br>`;
+      }).join('');
+
+      let summaryHtml = `
+        <strong>Nombre:</strong> ${user.name || 'Cliente'}<br>
+        <strong>Teléfono:</strong> ${user.phone || 'No especificado'}<br>
+        <strong>Tipo:</strong> ${user.type || 'Delivery'}${user.type === 'Para Mesa' && user.mesa ? ` / Mesa ${user.mesa}` : ''}<br><br>
+        <strong>Detalle del Pedido:</strong><br>
+        ${itemsHtml}<br>
+        <strong style="font-size:1.1rem; color:var(--bh-green);">TOTAL A PAGAR: ${total} Bs</strong>
+      `;
+
+      document.getElementById('modalSummaryContent').innerHTML = summaryHtml;
+      const message = `Hola, quiero realizar este pedido Burgerhaus (${randomCode}).%0A%0ANombre: ${user.name}%0ATeléfono: ${user.phone}%0ATipo: ${user.type}${user.type === 'Para Mesa' ? `%0AMesa: ${user.mesa}` : ''}%0A%0A${cart.map(item => `- ${item.name} x${item.qty}: ${item.price * item.qty} Bs`).join('%0A')}%0A%0ATotal: ${total} Bs`;
+      const whatsappUrl = `https://wa.me/59162701097?text=${message}`;
+      document.getElementById('whatsappLink').href = whatsappUrl;
+      document.getElementById('confirmModal').style.display = 'flex';
+      lastFocusedElement = document.activeElement;
+      setSiteInert(true);
+      document.getElementById('whatsappLink').focus();
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').style.display = 'none';
+      cart = [];
+      updateCartUI();
+      toggleCart(false);
+      setSiteInert(false);
+      if (lastFocusedElement) lastFocusedElement.focus();
+      lastFocusedElement = null;
+    }
+
+    document.querySelector('.cart-pill').addEventListener('click', () => toggleCart());
+    document.querySelector('.cart-pill').setAttribute('aria-expanded', 'false');
+    document.querySelector('.cart-pill').setAttribute('aria-controls', 'cartDrawer');
+
+    // Inicializar
+    setSiteInert(true);
+    updateMesaField();
+    document.getElementById('custName').focus();
+    filterCategory('combos', document.querySelector('.cat-btn-hero'));
+    updateCartUI();
+  </script>
+</body>
 </html>
