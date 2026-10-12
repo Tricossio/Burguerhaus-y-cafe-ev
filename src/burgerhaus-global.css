@@ -1,0 +1,66 @@
+:root {
+  --bh-white: #fff;
+  --bh-black: #000;
+  --bh-black-alt: #0f172a;
+  --bh-green: #15803d;
+  --bh-green-light: #16a34a;
+  --bh-gray-light: #f8fafc;
+  --bh-gray-border: #e2e8f0;
+  --bh-gray-text: #64748b;
+  font-family: 'Poppins', sans-serif;
+  color: var(--bh-black-alt);
+  background: var(--bh-white);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--bh-white);
+  color: var(--bh-black-alt);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--bh-green-light);
+  outline-offset: 3px;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#root {
+  min-height: 100vh;
+}
